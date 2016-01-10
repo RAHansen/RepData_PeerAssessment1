@@ -1,30 +1,32 @@
----
-title: 'Reproducible Research: Peer Assessment 1'
-output:
-  html_document:
-    keep_md: yes
-  word_document: default
----
+# Reproducible Research: Peer Assessment 1
 ### Prepared by Bob Hansen
 
 ## Loading and preprocessing the data
-```{r}
+
+```r
     activity <- read.csv("activity.csv")        # read file
     activity$date <- as.Date(activity$date)     # set date field as date type
 ```
 
 ## What is mean total number of steps taken per day?
-```{r}
+
+```r
     stepsPerDay <- aggregate(activity["steps"], by=list(activity$date), FUN=sum, na.rm=TRUE)
     hist(stepsPerDay$steps, breaks=25, main="Distribution of Steps per Day", xlab="Steps/Day")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+
+```r
     steps.mean <- mean(stepsPerDay$steps, na.rm=TRUE)
     steps.median <- median(stepsPerDay$steps, na.rm=TRUE)
     options(digits=2, scipen=7)
 ```
-####The average number of steps taken per day is `r steps.mean`, while the median is `r steps.median`.
+####The average number of steps taken per day is 9354.23, while the median is 10395.
 
 ## What is the average daily activity pattern?
-```{r}
+
+```r
     avgStepsPerInterval <- aggregate(activity["steps"], by=list(activity$interval), FUN=mean, na.rm=TRUE)
     # Add a friendly time factor
         int.high <- avgStepsPerInterval$Group.1 %/% 100
@@ -35,20 +37,27 @@ output:
     plot(avgStepsPerInterval$Group.1, avgStepsPerInterval$steps, type="l",
         main="Daily Activity Profile", ylab="Avg. Steps", xlab="Time of Day", xaxt="n")
     axis(side=1, labels=avgStepsPerInterval$intStr, at=avgStepsPerInterval$Group.1, tick=FALSE)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
+```r
     mostActiveInterval <- as.character(avgStepsPerInterval[which.max(avgStepsPerInterval$steps), "intStr"])
 ```
-####On average, the most active 5-minute interval occurs at `r mostActiveInterval`.
+####On average, the most active 5-minute interval occurs at 08:35.
 
 ## Imputing missing values
-```{r}
+
+```r
     numMissingValues <- sum(is.na(activity$steps))
     datesWithNoData <- unique(activity[is.na(activity$steps),"date"])   # at least one NA
     datesWithData <- unique(activity[!activity$date %in% datesWithNoData,"date"])
 ```
-####There are `r numMissingValues` intervals without step counts, and `r length(datesWithNoData)` dates with at least one interval with no data.
+####There are 2304 intervals without step counts, and 8 dates with at least one interval with no data.
 
 For any intervals/days that do not have step count data, we replace that entry with the average number of steps taken during that interval for those days that do have data.
-```{r}
+
+```r
     # create new data frame
         act2 <- data.frame(activity)
     # Fill in missing values from average for that interval
@@ -58,15 +67,21 @@ For any intervals/days that do not have step count data, we replace that entry w
         NUstepsPerDay <- aggregate(act2["steps"], by=list(act2$date), FUN=sum, na.rm=TRUE)
         hist(stepsPerDay$steps, breaks=25, 
              main="Distribution of Steps per Day with Imputed Values", xlab="Steps/Day")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+
+```r
         NUsteps.mean <- mean(NUstepsPerDay$steps, na.rm=TRUE)
         NUsteps.median <- median(NUstepsPerDay$steps, na.rm=TRUE)
 ```
-####With missing values replaced with the average number of steps for that interval, the average number of steps taken per day is now `r NUsteps.mean`, while the median is `r NUsteps.median`.
+####With missing values replaced with the average number of steps for that interval, the average number of steps taken per day is now 9530.72, while the median is 10439.
 The averages have increased slightly since the intervals with missing data were counted as zero in the oringinal calculations. These new averages are probably more accurate if the missing values were due to not logging the number of steps on those days, while still actually taking the steps.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{r}
+
+```r
     weekend <- c("Sat", "Sun")
     daytype <- c("weekday", "weekend")
     act2$daytype <- as.factor(daytype[weekdays(act2[,"date"], abbreviate = TRUE) %in% weekend*1 +1])
@@ -85,6 +100,13 @@ The averages have increased slightly since the intervals with missing data were 
 #     axis(side=1, labels=avgStepsPerInterval$intStr, at=avgStepsPerInterval$Group.1, tick=FALSE)
     
     require(lattice)
+```
+
+```
+## Loading required package: lattice
+```
+
+```r
     act2mean <- rbind(avgSPIweekday, avgSPIweekend)
     # Add a friendly time factor
         int.high <- act2mean$interval %/% 100
@@ -97,6 +119,8 @@ The averages have increased slightly since the intervals with missing data were 
     xyplot(act2mean$steps~act2mean$intStr | act2mean$daytype, type="l", layout=c(1,2),
            ylab="Average Number of Steps", xlab="Time of Day", main="Activity Profile",
            scales=list(x=list(at=myat, labels=mylabels)))
-```    
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 
 ####There appears to be more early morning activity during the week, and more afternoon activity on the weekends.
